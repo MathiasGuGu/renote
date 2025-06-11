@@ -7,7 +7,7 @@ export interface NotionAccount {
   userId: string;
   connectedAt: Date;
   lastSync?: Date;
-  status: 'connected' | 'disconnected' | 'error';
+  status: "connected" | "disconnected" | "error";
 }
 
 export interface NotionDatabase {
