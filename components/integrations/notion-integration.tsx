@@ -1,14 +1,29 @@
-'use client';
+"use client";
 
-import { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Button } from '@/components/ui/button';
-import { Switch } from '@/components/ui/switch';
-import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import { NotionAccount, NotionIntegrationStats } from '@/lib/notion/types';
-import { Calendar, Database, FileText, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
+import { useState } from "react";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Switch } from "@/components/ui/switch";
+import { Label } from "@/components/ui/label";
+import { Separator } from "@/components/ui/separator";
+import { NotionAccount, NotionIntegrationStats } from "@/lib/notion/types";
+import {
+  Calendar,
+  Database,
+  FileText,
+  AlertCircle,
+  CheckCircle,
+  XCircle,
+  RefreshCw,
+} from "lucide-react";
+import Image from "next/image";
 
 interface NotionIntegrationProps {
   accounts: NotionAccount[];
@@ -17,23 +32,25 @@ interface NotionIntegrationProps {
 
 export function NotionIntegration({ accounts, stats }: NotionIntegrationProps) {
   const [isEnabled, setIsEnabled] = useState(accounts.length > 0);
-  
-  const getStatusIcon = (status: NotionAccount['status']) => {
-    switch (status) {
-      case 'connected':
-        return <CheckCircle className="h-4 w-4 text-green-500" />;
-      case 'error':
-        return <XCircle className="h-4 w-4 text-red-500" />;
-      case 'disconnected':
-        return <AlertCircle className="h-4 w-4 text-yellow-500" />;
-    }
-  };
+  const [isDisconnecting, setIsDisconnecting] = useState<string | null>(null);
+  const [isSyncing, setIsSyncing] = useState<string | null>(null);
 
-  const getStatusBadge = (status: NotionAccount['status']) => {
+  //   const getStatusIcon = (status: NotionAccount["status"]) => {
+  //     switch (status) {
+  //       case "connected":
+  //         return <CheckCircle className="h-4 w-4 text-green-500" />;
+  //       case "error":
+  //         return <XCircle className="h-4 w-4 text-red-500" />;
+  //       case "disconnected":
+  //         return <AlertCircle className="h-4 w-4 text-yellow-500" />;
+  //     }
+  //   };
+
+  const getStatusBadge = (status: NotionAccount["status"]) => {
     const variants = {
-      connected: 'default',
-      error: 'destructive',
-      disconnected: 'secondary',
+      connected: "default",
+      error: "destructive",
+      disconnected: "secondary",
     } as const;
 
     return (
@@ -45,12 +62,41 @@ export function NotionIntegration({ accounts, stats }: NotionIntegrationProps) {
 
   const handleConnectNotion = () => {
     // Redirect to the OAuth initiation endpoint
-    window.location.href = '/api/auth/notion';
+    window.location.href = "/api/auth/notion";
   };
 
-  const handleDisconnectAccount = (accountId: string) => {
-    // TODO: Implement account disconnection
-    console.log('Disconnecting account:', accountId);
+  const handleDisconnectAccount = async (accountId: string) => {
+    if (
+      !confirm(
+        "Are you sure you want to disconnect this Notion account? This will remove all synced data."
+      )
+    ) {
+      return;
+    }
+
+    try {
+      setIsDisconnecting(accountId);
+      const { removeNotionAccount } = await import("@/app/server");
+      await removeNotionAccount(accountId);
+      // Redirect to show success message
+      window.location.href = "/settings?success=notion_disconnected";
+    } catch (error) {
+      console.error("Failed to disconnect account:", error);
+      window.location.href = "/settings?error=disconnect_failed";
+    }
+  };
+
+  const handleSyncAccount = async (accountId: string) => {
+    try {
+      setIsSyncing(accountId);
+      const { triggerNotionSync } = await import("@/app/server");
+      await triggerNotionSync(accountId);
+      // Redirect to show success message
+      window.location.href = "/settings?success=notion_synced";
+    } catch (error) {
+      console.error("Failed to sync account:", error);
+      window.location.href = "/settings?error=sync_failed";
+    }
   };
 
   return (
@@ -61,7 +107,9 @@ export function NotionIntegration({ accounts, stats }: NotionIntegrationProps) {
           <div className="flex items-center justify-between">
             <div className="flex items-center space-x-3">
               <div className="w-10 h-10 bg-black dark:bg-white rounded-lg flex items-center justify-center">
-                <span className="text-white dark:text-black font-bold text-lg">N</span>
+                <span className="text-white dark:text-black font-bold text-lg">
+                  N
+                </span>
               </div>
               <div>
                 <CardTitle>Notion Integration</CardTitle>
@@ -88,9 +136,12 @@ export function NotionIntegration({ accounts, stats }: NotionIntegrationProps) {
                 <div className="w-16 h-16 bg-muted rounded-full flex items-center justify-center mx-auto mb-4">
                   <Database className="h-8 w-8 text-muted-foreground" />
                 </div>
-                <h3 className="text-lg font-medium mb-2">No Notion accounts connected</h3>
+                <h3 className="text-lg font-medium mb-2">
+                  No Notion accounts connected
+                </h3>
                 <p className="text-muted-foreground mb-4">
-                  Connect your Notion workspace to start syncing your notes and databases.
+                  Connect your Notion workspace to start syncing your notes and
+                  databases.
                 </p>
                 <Button onClick={handleConnectNotion}>
                   Connect Notion Account
@@ -102,12 +153,23 @@ export function NotionIntegration({ accounts, stats }: NotionIntegrationProps) {
                 <div>
                   <h4 className="font-medium mb-3">Connected Accounts</h4>
                   <div className="space-y-3">
-                    {accounts.map((account) => (
-                      <div key={account.id} className="flex items-center justify-between p-3 border rounded-lg">
+                    {accounts.map(account => (
+                      <div
+                        key={account.id}
+                        className="flex items-center justify-between p-3 border rounded-lg"
+                      >
                         <div className="flex items-center space-x-3">
                           <div className="w-8 h-8 bg-muted rounded flex items-center justify-center">
                             {account.workspaceIcon ? (
-                              <span>{account.workspaceIcon}</span>
+                              <span>
+                                <Image
+                                  src={account.workspaceIcon}
+                                  alt={account.workspaceName}
+                                  className="rounded-lg"
+                                  width={32}
+                                  height={32}
+                                />
+                              </span>
                             ) : (
                               <span className="text-xs font-medium">
                                 {account.workspaceName.charAt(0).toUpperCase()}
@@ -116,22 +178,49 @@ export function NotionIntegration({ accounts, stats }: NotionIntegrationProps) {
                           </div>
                           <div>
                             <div className="flex items-center space-x-2">
-                              <span className="font-medium">{account.workspaceName}</span>
-                              {getStatusIcon(account.status)}
+                              <span className="font-medium">
+                                {account.workspaceName}
+                              </span>
+                              {/* {getStatusIcon(account.status)} */}
                               {getStatusBadge(account.status)}
                             </div>
                             <div className="text-sm text-muted-foreground">
-                              Connected {account.connectedAt.toLocaleDateString()}
+                              Connected {account.createdAt.toLocaleDateString()}
+                              {account.lastSync && (
+                                <span className="ml-2">
+                                  • Last sync:{" "}
+                                  {account.lastSync.toLocaleDateString()}
+                                </span>
+                              )}
                             </div>
                           </div>
                         </div>
-                        <Button
-                          variant="outline"
-                          size="sm"
-                          onClick={() => handleDisconnectAccount(account.id)}
-                        >
-                          Disconnect
-                        </Button>
+                        <div className="flex items-center space-x-2">
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={
+                              isSyncing === account.id ||
+                              isDisconnecting === account.id
+                            }
+                            onClick={() => handleSyncAccount(account.id)}
+                          >
+                            {isSyncing === account.id ? "Syncing..." : "Sync"}
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            disabled={
+                              isDisconnecting === account.id ||
+                              isSyncing === account.id
+                            }
+                            onClick={() => handleDisconnectAccount(account.id)}
+                          >
+                            {isDisconnecting === account.id
+                              ? "Disconnecting..."
+                              : "Disconnect"}
+                          </Button>
+                        </div>
                       </div>
                     ))}
                   </div>
@@ -171,22 +260,26 @@ export function NotionIntegration({ accounts, stats }: NotionIntegrationProps) {
               <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
                 <Database className="h-8 w-8 text-blue-500" />
                 <div>
-                  <div className="text-2xl font-bold">{stats.totalDatabases}</div>
+                  <div className="text-xl font-medium">
+                    {stats.totalDatabases}
+                  </div>
                   <div className="text-sm text-muted-foreground">Databases</div>
                 </div>
               </div>
               <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
                 <FileText className="h-8 w-8 text-green-500" />
                 <div>
-                  <div className="text-2xl font-bold">{stats.totalPages}</div>
+                  <div className="text-xl font-medium">{stats.totalPages}</div>
                   <div className="text-sm text-muted-foreground">Pages</div>
                 </div>
               </div>
               <div className="flex items-center space-x-3 p-3 bg-muted/50 rounded-lg">
                 <Calendar className="h-8 w-8 text-purple-500" />
                 <div>
-                  <div className="text-2xl font-bold">
-                    {stats.lastSync ? stats.lastSync.toLocaleDateString() : 'Never'}
+                  <div className="text-xl font-medium">
+                    {stats.lastSync
+                      ? stats.lastSync.toLocaleDateString()
+                      : "Never"}
                   </div>
                   <div className="text-sm text-muted-foreground">Last Sync</div>
                 </div>
@@ -197,7 +290,8 @@ export function NotionIntegration({ accounts, stats }: NotionIntegrationProps) {
                 <div className="flex items-center space-x-2">
                   <AlertCircle className="h-4 w-4 text-red-500" />
                   <span className="text-sm font-medium text-red-700 dark:text-red-400">
-                    {stats.syncErrors} sync error{stats.syncErrors !== 1 ? 's' : ''} detected
+                    {stats.syncErrors} sync error
+                    {stats.syncErrors !== 1 ? "s" : ""} detected
                   </span>
                 </div>
               </div>
