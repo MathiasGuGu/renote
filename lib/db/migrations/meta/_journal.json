@@ -8,6 +8,34 @@
       "when": 1749649049768,
       "tag": "0000_mean_centennial",
       "breakpoints": true
+    },
+    {
+      "idx": 1,
+      "version": "7",
+      "when": 1749655143355,
+      "tag": "0001_fixed_manta",
+      "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1749656837425,
+      "tag": "0002_cool_tattoo",
+      "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1749659038342,
+      "tag": "0003_lame_gertrude_yorkes",
+      "breakpoints": true
+    },
+    {
+      "idx": 4,
+      "version": "7",
+      "when": 1749663008672,
+      "tag": "0004_silly_gwen_stacy",
+      "breakpoints": true
     }
   ]
 }

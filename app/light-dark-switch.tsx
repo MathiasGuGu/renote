@@ -1,10 +1,16 @@
 "use client";
 import { Button } from "@/components/ui/button";
 import { MoonIcon, SunIcon } from "lucide-react";
-import { useTheme } from "@/lib/use-theme";
+import { useThemeStore } from "@/lib/stores/theme-store";
+import { useEffect } from "react";
 
 export default function LightDarkSwitch() {
-  const { isDark, toggleTheme, mounted } = useTheme();
+  const { theme, mounted, toggleTheme, setMounted } = useThemeStore();
+  const isDark = theme === "dark";
+
+  useEffect(() => {
+    setMounted(true);
+  }, [setMounted]);
 
   if (!mounted) {
     return (

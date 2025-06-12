@@ -1,4 +1,11 @@
-import { pgTable, text, timestamp, uuid, jsonb } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  jsonb,
+  integer,
+} from "drizzle-orm/pg-core";
 import { notionAccounts } from "./notion-accounts";
 
 export const notionPages = pgTable("notion_pages", {
@@ -37,4 +44,14 @@ export const notionPages = pgTable("notion_pages", {
   lastSyncedAt: timestamp("last_synced_at").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
+
+  // Phase 3: Change Detection & Incremental Processing
+  contentHash: text("content_hash"), // MD5/SHA hash of content for change detection
+  propertiesHash: text("properties_hash"), // Hash of properties for change detection
+  titleHash: text("title_hash"), // Hash of title for change detection
+  lastProcessedAt: timestamp("last_processed_at"), // When content was last processed for questions
+  lastProcessedHash: text("last_processed_hash"), // Hash of content when last processed
+  processingVersion: integer("processing_version").default(1), // Version tracking for incremental updates
+  changeDetectedAt: timestamp("change_detected_at"), // When a change was first detected
+  requiresProcessing: text("requires_processing").default("false"), // Flag for pending processing
 });

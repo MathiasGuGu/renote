@@ -18,11 +18,23 @@ import {
   Calendar,
   User,
   TestTube,
+  Brain,
+  Plus,
+  Trash2,
+  DollarSign,
+  Archive,
 } from "lucide-react";
 import { getUserNotionAccounts } from "@/app/server";
 import { getNotionPagesByAccountId } from "@/lib/db/queries/notion-pages";
 import { getNotionDatabasesByAccountId } from "@/lib/db/queries/notion-databases";
+import { getQuestionsByPageId } from "@/lib/db/queries/questions";
+import { QuestionGenerator } from "@/components/test/question-generator";
 import Link from "next/link";
+import { BackgroundJobQueue } from "@/components/jobs/background-job-queue";
+import { QuestionScheduler } from "@/components/jobs/question-scheduler";
+import { getNotionIntegrationStats } from "@/app/server";
+import ChangeDetectionDashboard from "@/components/change-detection-dashboard";
+import AutoSyncDashboard from "@/components/auto-sync-dashboard";
 
 async function NotionTestData() {
   try {
@@ -53,9 +65,34 @@ async function NotionTestData() {
       const pages = await getNotionPagesByAccountId(account.id);
       const databases = await getNotionDatabasesByAccountId(account.id);
 
-      allPages.push(
-        ...pages.map(page => ({ ...page, accountName: account.workspaceName }))
+      // Add question counts to pages (with error handling)
+      const pagesWithQuestions = await Promise.all(
+        pages.map(async page => {
+          try {
+            const questions = await getQuestionsByPageId(page.id);
+            return {
+              ...page,
+              accountName: account.workspaceName,
+              questionCount: questions.length,
+              questions: questions,
+            };
+          } catch (error) {
+            // Handle case where questions table doesn't exist yet
+            console.warn(
+              `Could not load questions for page ${page.id}:`,
+              error instanceof Error ? error.message : "Unknown error"
+            );
+            return {
+              ...page,
+              accountName: account.workspaceName,
+              questionCount: 0,
+              questions: [],
+            };
+          }
+        })
       );
+
+      allPages.push(...pagesWithQuestions);
       allDatabases.push(
         ...databases.map(db => ({ ...db, accountName: account.workspaceName }))
       );
@@ -164,6 +201,8 @@ async function NotionTestData() {
             </CardContent>
           </Card>
         )}
+        <ChangeDetectionDashboard accountId={accounts[0].id} />
+        <AutoSyncDashboard accountId={accounts[0].id} />
 
         {/* Pages Section */}
         {allPages.length > 0 && (
@@ -179,50 +218,82 @@ async function NotionTestData() {
             </CardHeader>
             <CardContent>
               <div className="space-y-3">
-                {allPages.map(page => (
+                {allPages.slice(0, 3).map(page => (
                   <div
                     key={page.id}
-                    className="flex items-center justify-between p-3 border rounded-lg"
+                    className="border rounded-lg overflow-hidden"
                   >
-                    <div className="flex items-center space-x-3">
-                      <div className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded flex items-center justify-center">
-                        {page.icon?.emoji ? (
-                          <span className="text-sm">{page.icon.emoji}</span>
-                        ) : (
-                          <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
-                        )}
-                      </div>
-                      <div>
-                        <div className="font-medium">{page.title}</div>
-                        <div className="text-sm text-muted-foreground">
-                          {page.accountName} • Last edited:{" "}
-                          {page.lastEditedTime.toLocaleDateString()}
-                        </div>
-                        <div className="text-sm text-muted-foreground">
-                          Parent: {page.parent?.type || "workspace"}
-                          {page.content && (
-                            <span className="ml-2">• Has content</span>
+                    <div className="flex items-center justify-between p-3">
+                      <div className="flex items-center space-x-3">
+                        <div className="w-8 h-8 bg-green-100 dark:bg-green-900 rounded flex items-center justify-center">
+                          {page.icon?.emoji ? (
+                            <span className="text-sm">{page.icon.emoji}</span>
+                          ) : (
+                            <FileText className="h-4 w-4 text-green-600 dark:text-green-400" />
                           )}
                         </div>
+                        <div>
+                          <div className="font-medium">{page.title}</div>
+                          <div className="text-sm text-muted-foreground">
+                            {page.accountName} • Last edited:{" "}
+                            {page.lastEditedTime.toLocaleDateString()}
+                          </div>
+                          <div className="text-sm text-muted-foreground">
+                            Parent: {page.parent?.type || "workspace"}
+                            {page.content && (
+                              <span className="ml-2">• Has content</span>
+                            )}
+                            {page.questionCount > 0 && (
+                              <span className="ml-2">
+                                • {page.questionCount} questions
+                              </span>
+                            )}
+                          </div>
+                        </div>
+                      </div>
+                      <div className="flex items-center space-x-2">
+                        <Badge
+                          variant={
+                            page.archived === "true" ? "destructive" : "default"
+                          }
+                        >
+                          {page.archived === "true" ? "Archived" : "Active"}
+                        </Badge>
+                        {page.questionCount > 0 && (
+                          <Badge
+                            variant="secondary"
+                            className="bg-blue-100 text-blue-800"
+                          >
+                            <Brain className="h-3 w-3 mr-1" />
+                            {page.questionCount}
+                          </Badge>
+                        )}
+                        <Button variant="outline" size="sm" asChild>
+                          <a
+                            href={page.url}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                          >
+                            <ExternalLink className="h-3 w-3" />
+                          </a>
+                        </Button>
                       </div>
                     </div>
-                    <div className="flex items-center space-x-2">
-                      <Badge
-                        variant={
-                          page.archived === "true" ? "destructive" : "default"
-                        }
-                      >
-                        {page.archived === "true" ? "Archived" : "Active"}
-                      </Badge>
-                      <Button variant="outline" size="sm" asChild>
-                        <a
-                          href={page.url}
-                          target="_blank"
-                          rel="noopener noreferrer"
-                        >
-                          <ExternalLink className="h-3 w-3" />
-                        </a>
-                      </Button>
+
+                    {/* Question Generator */}
+                    <div className="px-3 pb-3">
+                      <QuestionGenerator
+                        pageId={page.id}
+                        pageTitle={page.title}
+                      />
+                    </div>
+
+                    {/* Question Scheduler - Phase 2 */}
+                    <div className="px-3 pb-3">
+                      <QuestionScheduler
+                        pageId={page.id}
+                        pageTitle={page.title}
+                      />
                     </div>
                   </div>
                 ))}
@@ -266,7 +337,7 @@ async function NotionTestData() {
   }
 }
 
-export default async function NotionTestPage() {
+export default async function NotionPagesTestPage() {
   const { userId } = await auth();
 
   if (!userId) {
@@ -274,50 +345,22 @@ export default async function NotionTestPage() {
   }
 
   return (
-    <div className="container mx-auto py-6 px-4 md:px-6 max-w-6xl">
-      <div className="space-y-6">
-        {/* Page Header */}
-        <div className="space-y-2">
-          <div className="flex items-center space-x-2">
-            <TestTube className="h-6 w-6 text-orange-500" />
-            <h1 className="text-2xl font-bold tracking-tight">
-              Notion Data Test Page
-            </h1>
-            <Badge
-              variant="outline"
-              className="text-orange-600 border-orange-200"
-            >
-              TEST ONLY
-            </Badge>
-          </div>
-          <p className="text-muted-foreground">
-            This page displays all synced Notion pages and databases for testing
-            purposes.
-          </p>
-        </div>
-
-        <Separator />
-
-        {/* Navigation */}
-        <div className="flex items-center space-x-4">
-          <Link href="/settings">
-            <Button variant="outline">← Back to Settings</Button>
-          </Link>
-        </div>
-
-        {/* Test Data */}
-        <Suspense
-          fallback={
-            <Card>
-              <CardContent className="pt-6">
-                <div className="text-center">Loading test data...</div>
-              </CardContent>
-            </Card>
-          }
-        >
-          <NotionTestData />
-        </Suspense>
+    <div className="container mx-auto py-8 space-y-8">
+      <div className="text-center space-y-4">
+        <h1 className="text-3xl font-bold">Notion Pages Test</h1>
+        <p className="text-gray-600 max-w-2xl mx-auto">
+          This page shows synced Notion data and AI question generation
+          capabilities. It includes both immediate generation (Phase 1) and
+          background processing (Phase 2).
+        </p>
+        <Link href="/settings">
+          <Button variant="outline">← Back to Settings</Button>
+        </Link>
       </div>
+
+      {/* Background Job Queue - Phase 2 */}
+      <BackgroundJobQueue />
+      <NotionTestData />
     </div>
   );
 }

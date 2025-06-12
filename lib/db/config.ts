@@ -5,8 +5,13 @@ import * as schema from "./schema";
 // Connection string from Supabase
 const connectionString = process.env.DATABASE_URL!;
 
-// Disable prefetch as it is not supported for "Transaction" pool mode
-const client = postgres(connectionString, { prepare: false });
+// Optimize connection pool for Supabase limits
+const client = postgres(connectionString, {
+  prepare: false,
+  max: 10, // Limit concurrent connections
+  idle_timeout: 20, // Close idle connections after 20 seconds
+  max_lifetime: 60 * 30, // Close connections after 30 minutes
+});
 
 export const db = drizzle(client, { schema });
 
