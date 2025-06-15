@@ -15,7 +15,7 @@ export const notionPages = pgTable("notion_pages", {
     .notNull()
     .references(() => notionAccounts.id, { onDelete: "cascade" }),
   notionId: text("notion_id").notNull().unique(),
-  title: jsonb("title").$type<RichText[]>().notNull(),
+  title: jsonb("title").$type<RichText[]>().notNull().$defaultFn(() => []),
   url: text("url").notNull(),
   cover: jsonb("cover").$type<Cover | null>(),
   icon: jsonb("icon").$type<Icon | null>(),
