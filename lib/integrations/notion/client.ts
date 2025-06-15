@@ -14,7 +14,7 @@ The main function is to fetch data from the Notion API.
 ===============================================
 */
 
-import { NotionDatabase, NotionDatabaseQueryResponse, NotionErrorResponse, NotionPageResponse, NotionUser, RichText, } from "./types";
+  import { NotionDatabase, NotionDatabaseQueryResponse, NotionErrorResponse, NotionPageResponse, NotionUser, RichText, } from "./types";
 
 
 

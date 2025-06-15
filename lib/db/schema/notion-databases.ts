@@ -5,13 +5,15 @@ import {
   uuid,
   jsonb,
   integer,
+  boolean,
 } from "drizzle-orm/pg-core";
 import { notionAccounts } from "./notion-accounts";
 import type {
-  NotionRichText,
-  NotionIcon,
-  NotionCover,
-  NotionParent,
+  RichText,
+  Icon,
+  Cover,
+  Parent,
+  AnyPropertyValue,
 } from "@/lib/integrations/notion/types";
 
 export const notionDatabases = pgTable("notion_databases", {
@@ -20,15 +22,15 @@ export const notionDatabases = pgTable("notion_databases", {
     .notNull()
     .references(() => notionAccounts.id, { onDelete: "cascade" }),
   notionId: text("notion_id").notNull().unique(),
-  title: text("title").notNull(),
-  description: text("description"),
+  title: jsonb("title").$type<RichText[]>().notNull(),
+  description: jsonb("description").$type<RichText[]>(),
   url: text("url").notNull(),
-  cover: jsonb("cover").$type<NotionCover | null>(),
-  icon: jsonb("icon").$type<NotionIcon | null>(),
-  properties: jsonb("properties").notNull(),
-  parent: jsonb("parent").$type<NotionParent>(),
-  archived: text("archived").default("false"),
-  is_inline: text("is_inline").default("false"),
+  cover: jsonb("cover").$type<Cover | null>(),
+  icon: jsonb("icon").$type<Icon | null>(),
+  properties: jsonb("properties").$type<Record<string, AnyPropertyValue>>().notNull(),
+  parent: jsonb("parent").$type<Parent>().notNull(),
+  archived: boolean("archived").default(false),
+  is_inline: boolean("is_inline").default(false),
   public_url: text("public_url"),
   pageCount: integer("page_count").default(0),
   created_time: timestamp("created_time").notNull(),
@@ -36,5 +38,5 @@ export const notionDatabases = pgTable("notion_databases", {
   lastSyncedAt: timestamp("last_synced_at").defaultNow().notNull(),
   createdAt: timestamp("created_at").defaultNow().notNull(),
   updatedAt: timestamp("updated_at").defaultNow().notNull(),
-  in_trash: text("in_trash").default("false"),
+  in_trash: boolean("in_trash").default(false),
 });

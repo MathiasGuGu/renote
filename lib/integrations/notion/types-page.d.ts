@@ -1,3 +1,12 @@
+import { 
+  AnyPropertyValue,
+  Cover,
+  Icon,
+  NotionErrorResponse,
+  Parent,
+  User
+} from "./types";
+
 // Base types
 export interface User {
     object: 'user';

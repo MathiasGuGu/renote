@@ -1,5 +1,6 @@
 import { pgTable, text, timestamp, uuid, jsonb } from "drizzle-orm/pg-core";
-import { users } from "./users";
+import { users } from "./renote-users";
+import type { User } from "@/lib/integrations/notion/types";
 
 export const notionAccounts = pgTable("notion_accounts", {
   id: uuid("id").primaryKey().defaultRandom(),
@@ -11,18 +12,7 @@ export const notionAccounts = pgTable("notion_accounts", {
   workspaceIcon: text("workspace_icon"),
   accessToken: text("access_token").notNull(),
   botId: text("bot_id").notNull(),
-  owner: jsonb("owner").$type<{
-    type: "user" | "workspace";
-    user?: {
-      id: string;
-      name: string;
-      avatar_url?: string;
-      type: string;
-      person?: {
-        email: string;
-      };
-    };
-  }>(),
+  owner: jsonb("owner").$type<User>(),
   duplicatedTemplateId: text("duplicated_template_id"),
   requestId: text("request_id"),
   status: text("status", { enum: ["connected", "disconnected", "error"] })
