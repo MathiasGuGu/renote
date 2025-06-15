@@ -56,10 +56,14 @@ export class NotionSyncEngine {
     return "Not implemented";
   }
 
-  public async sync(): Promise<SyncResult | string> {
+  public async sync(): Promise<SyncResult> {
     try {
+      console.log("[NotionSyncEngine] Sync started");
+      const start = Date.now();
       await this.syncDatabases();
       await this.syncPages();
+      const end = Date.now();
+      console.log(`[NotionSyncEngine] Sync completed in ${end - start}ms`);
       return {
         success: true,
         stats: this.syncStats,
