@@ -1,5 +1,5 @@
 import { pgTable, text, timestamp, uuid, jsonb } from "drizzle-orm/pg-core";
-import { users } from "./users";
+import { users } from "./renote-users";
 import type { User } from "@/lib/integrations/notion/types";
 
 export const notionAccounts = pgTable("notion_accounts", {
