@@ -40,23 +40,6 @@ interface SyncResult {
   };
 }
 
-// Define record types for database operations
-type NotionDatabaseRecord = NotionDatabase & {
-  accountId: string;
-  pageCount: number;
-  lastSyncedAt: Date;
-  createdAt: Date;
-  updatedAt: Date;
-};
-
-type NotionPageRecord = NotionPage & {
-  accountId: string;
-  title: string;
-  content: any;
-  lastSyncedAt: Date;
-  createdAt: Date;
-  updatedAt: Date;
-};
 
 export class NotionSyncEngine {
   private client: NotionClient;
@@ -195,13 +178,6 @@ export async function runNotionSync(
     };
   }
 
-  // Log account details (excluding sensitive data)
-  console.log(`[NotionSyncEngine] Found Notion account:
-    - Workspace: ${notionAccount.workspaceName}
-    - Status: ${notionAccount.status}
-    - Last synced: ${notionAccount.lastSyncedAt}
-    - Access token length: ${notionAccount.accessToken.length}
-  `);
 
   if (!notionAccount.accessToken) {
     console.error(

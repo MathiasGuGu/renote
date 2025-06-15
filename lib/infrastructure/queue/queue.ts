@@ -1,6 +1,6 @@
 import { Queue, Worker, QueueEvents } from "bullmq";
 import { Redis } from "ioredis";
-import { runNotionSync } from "../pipeline/notion-sync";
+import { runNotionSync } from "../pipeline/notion-sync-example";
 
 // Redis connection configuration
 let connection: Redis | null = null;
