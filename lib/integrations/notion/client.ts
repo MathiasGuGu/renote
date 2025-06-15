@@ -14,17 +14,9 @@ The main function is to fetch data from the Notion API.
 ===============================================
 */
 
-import {
-  NotionAccount,
-  NotionDatabase,
-  NotionPage,
-  NotionIntegrationStats,
-  NotionBlock,
-  NotionUser,
-  NotionListResponse,
-  NotionError,
-  NotionRichText,
-} from "./types";
+import { NotionDatabase, NotionDatabaseQueryResponse, NotionErrorResponse, NotionPageResponse, NotionUser, RichText, } from "./types";
+
+
 
 export const notionConfig = {
   clientId: process.env.NOTION_CLIENT_ID,
@@ -61,7 +53,7 @@ export class NotionClient {
       });
 
       if (!response.ok) {
-        const error = (await response.json()) as NotionError;
+        const error = (await response.json()) as NotionErrorResponse;
         throw new Error(`Notion API Error (${error.status}): ${error.message}`);
       }
 
@@ -78,12 +70,11 @@ export class NotionClient {
     return this.makeRequest<NotionUser>("/users/me");
   }
 
-  async getDatabases(): Promise<NotionDatabase[]> {
+  async getDatabases(): Promise<NotionDatabaseQueryResponse> {
     try {
       const response = await this.makeRequest<
-        NotionListResponse<NotionDatabase>
+        NotionDatabaseQueryResponse
       >("/search", {
-        method: "POST",
         body: JSON.stringify({
           filter: {
             value: "database",
@@ -96,19 +87,16 @@ export class NotionClient {
         }),
       });
 
-      return response.results.map(db => ({
-        ...db,
-        notionId: db.id,
-      }));
+      return response;
     } catch (error) {
       console.error("Error fetching databases:", error);
       throw error;
     }
   }
 
-  async getPages(): Promise<NotionPage[]> {
+  async getPages(): Promise<NotionPageResponse> {
     try {
-      const response = await this.makeRequest<NotionListResponse<NotionPage>>(
+      const response = await this.makeRequest<NotionPageResponse>(
         "/search",
         {
           method: "POST",
@@ -125,10 +113,7 @@ export class NotionClient {
         }
       );
 
-      return response.results.map(page => ({
-        ...page,
-        notionId: page.id,
-      }));
+      return response;
     } catch (error) {
       console.error("Error fetching pages:", error);
       throw error;
@@ -137,8 +122,8 @@ export class NotionClient {
 
   async search(
     query: string
-  ): Promise<NotionListResponse<NotionPage | NotionDatabase>> {
-    return this.makeRequest<NotionListResponse<NotionPage | NotionDatabase>>(
+  ): Promise<NotionDatabaseQueryResponse | NotionPageResponse> {
+    return this.makeRequest<NotionDatabaseQueryResponse | NotionPageResponse>(
       "/search",
       {
         method: "POST",
@@ -157,24 +142,18 @@ export class NotionClient {
     const db = await this.makeRequest<NotionDatabase>(
       `/databases/${databaseId}`
     );
-    return {
-      ...db,
-      notionId: db.id,
-    };
+    return db;
   }
 
-  async getPage(pageId: string): Promise<NotionPage> {
-    const page = await this.makeRequest<NotionPage>(`/pages/${pageId}`);
-    return {
-      ...page,
-      notionId: page.id,
-    };
+  async getPage(pageId: string): Promise<NotionPageResponse> {
+    const page = await this.makeRequest<NotionPageResponse>(`/pages/${pageId}`);
+    return page;
   }
 
   async getPageContent(
     pageId: string
-  ): Promise<NotionListResponse<NotionBlock>> {
-    return this.makeRequest<NotionListResponse<NotionBlock>>(
+  ): Promise<NotionPageResponse> {
+    return this.makeRequest<NotionPageResponse>(
       `/blocks/${pageId}/children`
     );
   }
@@ -187,8 +166,8 @@ export class NotionClient {
       filter?: any;
       sorts?: any[];
     } = {}
-  ): Promise<NotionListResponse<NotionPage>> {
-    const response = await this.makeRequest<NotionListResponse<NotionPage>>(
+  ): Promise<NotionDatabaseQueryResponse> {
+    const response = await this.makeRequest<NotionDatabaseQueryResponse>(
       `/databases/${databaseId}/query`,
       {
         method: "POST",
@@ -196,29 +175,15 @@ export class NotionClient {
       }
     );
 
-    return {
-      ...response,
-      results: response.results.map(page => ({
-        ...page,
-        notionId: page.id,
-      })),
-    };
+    return response;
   }
 
-  async getUserNotionAccounts(): Promise<NotionAccount[]> {
-    return [];
+  async getUserNotionAccount(): Promise<NotionUser> {
+    return this.getUser();
   }
 
-  async getNotionIntegrationStats(
-    accountId: string
-  ): Promise<NotionIntegrationStats> {
-    return {
-      totalPages: 0,
-      totalDatabases: 0,
-    };
-  }
 
-  private extractTitle(titleArray: NotionRichText[]): string {
+  private extractTitle(titleArray: RichText[]): string {
     if (!Array.isArray(titleArray) || titleArray.length === 0) {
       return "Untitled";
     }
