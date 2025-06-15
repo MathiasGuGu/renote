@@ -17,16 +17,16 @@ interface SyncResult {
 
 export class NotionSyncEngine {
   private client: NotionClient;
-  private accountId: string;
+  private clerkId: string;
   private syncStats: {
     pagesSynced: number;
     databasesSynced: number;
     errors: number;
   };
 
-  constructor(accessToken: string, accountId: string) {
+  constructor(accessToken: string, clerkId: string) {
     this.client = new NotionClient(accessToken);
-    this.accountId = accountId;
+    this.clerkId = clerkId;
     this.syncStats = {
       pagesSynced: 0,
       databasesSynced: 0,
@@ -77,8 +77,9 @@ export class NotionSyncEngine {
 
 // Export a function to run the sync
 export async function runNotionSync(
-  accountId: string,
+  clerkId: string,
   userId: string
 ): Promise<SyncResult | string> {
-  return "Not implemented";
+  const syncEngine = new NotionSyncEngine(clerkId, userId);
+  return syncEngine.sync();
 }
