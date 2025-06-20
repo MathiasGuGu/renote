@@ -1,14 +1,8 @@
-import { 
-  AnyPropertyValue,
-  Cover,
-  Icon,
-  RichText,
-  User
-} from "./types";
+import { AnyPropertyValue, Cover, Icon, RichText, User } from "./types";
 
 export interface NotionDatabaseQueryResponse {
   object: "list";
-  results: Array<NotionPage | NotionDatabase>;
+  results: Array<NotionDatabase>;
   next_cursor: string | null;
   has_more: boolean;
   type: "page_or_database";

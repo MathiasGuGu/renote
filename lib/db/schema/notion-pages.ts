@@ -1,12 +1,19 @@
-import { pgTable, text, timestamp, uuid, jsonb, boolean } from "drizzle-orm/pg-core";
+import {
+  pgTable,
+  text,
+  timestamp,
+  uuid,
+  jsonb,
+  boolean,
+} from "drizzle-orm/pg-core";
 import { notionAccounts } from "./notion-accounts";
-import type { 
-  Cover, 
-  Icon, 
-  Parent, 
+import type {
+  Cover,
+  Icon,
+  Parent,
   AnyPropertyValue,
-  RichText, 
-  NotionBlock
+  RichText,
+  NotionBlock,
 } from "@/lib/integrations/notion/types";
 
 export const notionPages = pgTable("notion_pages", {
@@ -15,12 +22,17 @@ export const notionPages = pgTable("notion_pages", {
     .notNull()
     .references(() => notionAccounts.id, { onDelete: "cascade" }),
   notionId: text("notion_id").notNull().unique(),
-  title: jsonb("title").$type<RichText[]>().notNull().$defaultFn(() => []),
+  title: jsonb("title")
+    .$type<RichText[]>()
+    .notNull()
+    .$defaultFn(() => []),
   url: text("url").notNull(),
   cover: jsonb("cover").$type<Cover | null>(),
   icon: jsonb("icon").$type<Icon | null>(),
   parent: jsonb("parent").$type<Parent>().notNull(),
-  properties: jsonb("properties").$type<Record<string, AnyPropertyValue>>().notNull(),
+  properties: jsonb("properties")
+    .$type<Record<string, AnyPropertyValue>>()
+    .notNull(),
   content: jsonb("content").$type<NotionBlock[]>(),
   archived: boolean("archived").default(false),
   public_url: text("public_url"),

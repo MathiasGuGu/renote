@@ -21,13 +21,15 @@ export interface PersonUser extends BaseUser {
 export interface BotUser extends BaseUser {
   type: "bot";
   bot: {
-    owner: {
-      type: "workspace";
-      workspace: boolean;
-    } | {
-      type: "user";
-      user: PersonUser;
-    };
+    owner:
+      | {
+          type: "workspace";
+          workspace: boolean;
+        }
+      | {
+          type: "user";
+          user: PersonUser;
+        };
     workspace_name?: string;
   };
 }

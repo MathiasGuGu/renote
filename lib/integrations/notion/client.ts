@@ -14,9 +14,14 @@ The main function is to fetch data from the Notion API.
 ===============================================
 */
 
-  import { NotionDatabase, NotionDatabaseQueryResponse, NotionErrorResponse, NotionPageResponse, NotionUser, RichText, } from "./types";
-
-
+import {
+  NotionDatabase,
+  NotionDatabaseQueryResponse,
+  NotionErrorResponse,
+  NotionPageResponse,
+  NotionUser,
+  RichText,
+} from "./types";
 
 export const notionConfig = {
   clientId: process.env.NOTION_CLIENT_ID,
@@ -72,20 +77,21 @@ export class NotionClient {
 
   async getDatabases(): Promise<NotionDatabaseQueryResponse> {
     try {
-      const response = await this.makeRequest<
-        NotionDatabaseQueryResponse
-      >("/search", {
-        body: JSON.stringify({
-          filter: {
-            value: "database",
-            property: "object",
-          },
-          sort: {
-            direction: "descending",
-            timestamp: "last_edited_time",
-          },
-        }),
-      });
+      const response = await this.makeRequest<NotionDatabaseQueryResponse>(
+        "/search",
+        {
+          body: JSON.stringify({
+            filter: {
+              value: "database",
+              property: "object",
+            },
+            sort: {
+              direction: "descending",
+              timestamp: "last_edited_time",
+            },
+          }),
+        }
+      );
 
       return response;
     } catch (error) {
@@ -96,22 +102,19 @@ export class NotionClient {
 
   async getPages(): Promise<NotionPageResponse> {
     try {
-      const response = await this.makeRequest<NotionPageResponse>(
-        "/search",
-        {
-          method: "POST",
-          body: JSON.stringify({
-            filter: {
-              value: "page",
-              property: "object",
-            },
-            sort: {
-              direction: "descending",
-              timestamp: "last_edited_time",
-            },
-          }),
-        }
-      );
+      const response = await this.makeRequest<NotionPageResponse>("/search", {
+        method: "POST",
+        body: JSON.stringify({
+          filter: {
+            value: "page",
+            property: "object",
+          },
+          sort: {
+            direction: "descending",
+            timestamp: "last_edited_time",
+          },
+        }),
+      });
 
       return response;
     } catch (error) {
@@ -150,12 +153,8 @@ export class NotionClient {
     return page;
   }
 
-  async getPageContent(
-    pageId: string
-  ): Promise<NotionPageResponse> {
-    return this.makeRequest<NotionPageResponse>(
-      `/blocks/${pageId}/children`
-    );
+  async getPageContent(pageId: string): Promise<NotionPageResponse> {
+    return this.makeRequest<NotionPageResponse>(`/blocks/${pageId}/children`);
   }
 
   async queryDatabase(
@@ -181,7 +180,6 @@ export class NotionClient {
   async getUserNotionAccount(): Promise<NotionUser> {
     return this.getUser();
   }
-
 
   private extractTitle(titleArray: RichText[]): string {
     if (!Array.isArray(titleArray) || titleArray.length === 0) {

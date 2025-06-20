@@ -48,11 +48,6 @@ export async function GET(request: NextRequest) {
         imageUrl: "",
       });
 
-      // Create Notion account in database
-      const account = await createNotionAccount(oauthResponse);
-
-      console.log("Successfully created Notion account:", account.id);
-
       return NextResponse.redirect(
         new URL("/settings?success=notion_connected", request.url)
       );
