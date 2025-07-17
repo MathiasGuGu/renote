@@ -20,7 +20,7 @@ export interface UsersDatabaseReturn {
     theme?: "light" | "dark";
     notifications?: boolean;
     language?: string;
-  };
+  } | null;
   createdAt: Date;
   updatedAt: Date;
 }

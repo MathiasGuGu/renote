@@ -11,7 +11,7 @@ export interface BaseUser extends User {}
 export interface PersonUser extends BaseUser {
   type: "person";
   person: {
-    email?: string;
+    email: string;
   };
 }
 

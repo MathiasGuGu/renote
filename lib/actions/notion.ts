@@ -1,23 +1,13 @@
 "use server";
 
 import { auth } from "@clerk/nextjs/server";
-import { NotionOAuthResponse, NotionPage } from "../integrations/notion";
-import {
-  createNotionAccount as createNotionAccountDB,
-  getNotionAccountsByUserId,
-  getNotionPagesForUser,
-  getUserByClerkId,
-} from "../data/queries";
 import { revalidatePath } from "next/cache";
-import {
-  addJob,
-  QUEUE_NAMES,
-  SyncJobData,
-} from "../infrastructure/queue/queue";
+import { createNotionAccountInDatabase, deleteNotionAccountInDatabase } from "../data/notion";
+import { NotionOauthResponse } from "../integrations/notion/types";
 
 export async function exchangeNotionCode(
   code: string
-): Promise<NotionOAuthResponse> {
+): Promise<NotionOauthResponse> {
   const clientId = process.env.NOTION_CLIENT_ID;
   const clientSecret = process.env.NOTION_CLIENT_SECRET;
   const redirectUri = process.env.NOTION_REDIRECT_URI;
@@ -54,33 +44,40 @@ export async function exchangeNotionCode(
     );
   }
 
-  const result = await response.json();
-  return result;
+  return await response.json();
 }
 
-export async function createNotionAccount(oauthData: NotionOAuthResponse) {
+
+export async function createNotionAccount(oauthData: NotionOauthResponse) {
   const { userId } = await auth();
-  const user = await getUserByClerkId(userId!);
-  if (!user) {
+
+  if (!userId) {
     throw new Error("User not found");
   }
 
+
   try {
-    const account = await createNotionAccountDB({
-      userId: user.id,
-      workspaceName: oauthData.workspace_name,
-      workspaceId: oauthData.workspace_id,
-      workspaceIcon: oauthData.workspace_icon,
-      accessToken: oauthData.access_token,
-      botId: oauthData.bot_id,
-      owner: oauthData.owner,
-      duplicatedTemplateId: oauthData.duplicated_template_id,
-      requestId: oauthData.request_id,
+    const account = await createNotionAccountInDatabase({
+      clerkId: userId,
+      oauthData,
     });
 
     revalidatePath("/settings");
     return account;
   } catch (error) {
     throw new Error("Failed to create Notion account");
+  }
+}
+
+export async function deleteNotionAccount(accountId: string) {
+  const { userId } = await auth();
+  if (!userId) {
+    throw new Error("User not found");
+  }
+  try {
+    await deleteNotionAccountInDatabase(accountId);
+    revalidatePath("/settings");
+  } catch (error) {
+    throw new Error("Failed to delete Notion account");
   }
 }

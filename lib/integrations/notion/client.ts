@@ -75,9 +75,9 @@ export class NotionClient {
     return this.makeRequest<NotionUser>("/users/me");
   }
 
-  async getDatabases(): Promise<NotionDatabaseQueryResponse> {
+  async getDatabases(): Promise<NotionDatabaseQueryResponse[]> {
     try {
-      const response = await this.makeRequest<NotionDatabaseQueryResponse>(
+      const response = await this.makeRequest<NotionDatabaseQueryResponse[]>(
         "/search",
         {
           body: JSON.stringify({
@@ -100,9 +100,9 @@ export class NotionClient {
     }
   }
 
-  async getPages(): Promise<NotionPageResponse> {
+  async getPages(): Promise<NotionPageResponse[]> {
     try {
-      const response = await this.makeRequest<NotionPageResponse>("/search", {
+      const response = await this.makeRequest<NotionPageResponse[]>("/search", {
         method: "POST",
         body: JSON.stringify({
           filter: {

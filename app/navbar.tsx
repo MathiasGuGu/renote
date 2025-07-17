@@ -6,7 +6,7 @@ import {
   UserButton,
 } from "@clerk/nextjs";
 import Link from "next/link";
-import LightDarkSwitch from "./light-dark-switch";
+import LightDarkSwitch from "../components/app/light-dark-switch";
 import { Button } from "@/components/ui/button";
 import { Plus, Settings } from "lucide-react";
 

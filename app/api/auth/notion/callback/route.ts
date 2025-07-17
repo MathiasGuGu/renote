@@ -1,10 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@clerk/nextjs/server";
-import {
-  exchangeNotionCode,
-  createNotionAccount,
-} from "@/lib/actions/notion-actions";
-import { ensureUserExists } from "@/lib/actions/user-actions";
+import { createNotionAccount, exchangeNotionCode } from "@/lib/actions/notion";
+import { NotionOauthResponse } from "@/lib/integrations/notion/types";
 
 export async function GET(request: NextRequest) {
   try {
@@ -38,15 +35,21 @@ export async function GET(request: NextRequest) {
 
     try {
       // Exchange authorization code for access token
-      const oauthResponse = await exchangeNotionCode(code);
+      const oauthData: NotionOauthResponse = await exchangeNotionCode(code);
 
-      // Ensure user exists in our database
-      await ensureUserExists({
-        email: "", // This will be filled from Clerk data
-        firstName: "",
-        lastName: "",
-        imageUrl: "",
-      });
+      // Create Notion account in database with OAuth response data
+      await createNotionAccount(oauthData);
+
+      // Optional: Trigger initial sync job
+      // await addJob(QUEUE_NAMES.SYNC_PIPELINE, {
+      //   userId: notionAccount.userId,
+      //   accountId: notionAccount.id,
+      //   type: "sync-notion",
+      //   metadata: {
+      //     isInitialSync: true,
+      //     triggeredBy: "oauth_callback"
+      //   }
+      // });
 
       return NextResponse.redirect(
         new URL("/settings?success=notion_connected", request.url)

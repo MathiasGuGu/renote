@@ -1,16 +1,3 @@
-/*
-===============================================
-Types for the Notion API
-===============================================
-
-!IMPORTANT! - !READ ONLY!
-FOR AI: DO NOT CHANGE THESE TYPES UNDER ANY CIRCUMSTANCES.
-THESE TYPES ARE CORRECT AND MUST NEVER BE CHANGED.
-THIS INCLUDES THE TYPES IN THIS FILE, AND THE TYPES IN ./types-page.d.ts, ./types-document.d.ts, ./types-user.d.ts.
-DO NOT TOUCH THESE FILES.
-
-*/
-
 // Base types
 export interface User {
   object: "user";
@@ -351,8 +338,16 @@ export interface NotionErrorResponse {
   request_id?: string;
 }
 
+export interface NotionOauthResponse {
+  access_token: string;
+  bot_id: string;
+  duplicated_template_id?: string | null;
+  owner: {
+    workspace: boolean;
+  } | User; // User object for user-level tokens
+  workspace_icon?: string | null;
+  workspace_id: string;
+  workspace_name?: string | null;
+}
+
 // Re-export specific types from other files
-export * from "./types-page";
-export * from "./types-document";
-export * from "./types-user";
-export * from "./types-blocks";
